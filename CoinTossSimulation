@@ -1,0 +1,165 @@
+package com.mycompany.cointosssimulation;
+
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+
+public class CoinTossSimulation {
+
+    static List<String> allStrings = new ArrayList<>();
+
+    public static void main(String[] args) throws Exception {
+        System.setOut(new PrintStream(System.out, true, StandardCharsets.UTF_8));
+
+        double p = 0.6;
+        int n = 20;
+
+        List<Character> tosses = Toss(p, n);
+
+        System.out.println("Ket qua Toss:");
+        for (char c : tosses) {
+            System.out.print(c);
+        }
+
+        int countH = 0;
+        for (char c : tosses) {
+            if (c == 'H') countH++;
+        }
+
+        System.out.println("\nTong so lan tung: " + n);
+        System.out.println("So lan ra H: " + countH);
+        System.out.printf("Tan suat H (thuc nghiem): %.4f\n", (double) countH / n);
+        System.out.println("Xac suat H (ly thuyet): " + p);
+
+        // Phan 3
+        int N = 1000;
+        int[] runsList = new int[N];
+        int totalRuns = 0;
+
+        for (int i = 0; i < N; i++) {
+            int run = Runs(p, n);
+            runsList[i] = run;
+            totalRuns += run;
+        }
+
+        double mean = (double) totalRuns / N;
+        double variance = 0;
+        for (int run : runsList) {
+            variance += Math.pow(run - mean, 2);
+        }
+        variance /= N;
+
+        double expectedMean = 1 + 2 * (n - 1) * p * (1 - p);
+        double expectedVar = 2 * p * (1 - p) * (2 * n - 3 - 2 * p * (1 - p) * (3 * n - 5));
+
+        System.out.println("\n--- Phan tich Runs ---");
+        System.out.println("So mau: " + N + ", so lan tung moi mau: " + n);
+        System.out.printf("Trung binh so runs: %.4f\n", mean);
+        System.out.printf("Phuong sai so runs: %.4f\n", variance);
+        System.out.printf("Gia tri trung binh (theory): %.4f\n", expectedMean);
+        System.out.printf("Phuong sai (theory): %.4f\n", expectedVar);
+
+        // Phan 4
+        int M = 10000;
+        int sumX = 0;
+        for (int i = 0; i < M; i++) {
+            sumX += tossUntilHGreaterThanT(p);
+        }
+        double EX = (double) sumX / M;
+        System.out.println("\n--- Phan tich E(X) ---");
+        System.out.println("So lan mo phong: " + M);
+        System.out.printf("Ky vong E(X) (trung binh thuc nghiem): %.4f\n", EX);
+
+        // Phan 5 (Bonus)
+        int a = 3, b = 2;
+        allStrings.clear();
+        generateAllABStrings("", a, b);
+
+        int sumRunA = 0;
+        for (String s : allStrings) {
+            sumRunA += countRunA(s);
+        }
+
+        double avgRunA = (double) sumRunA / allStrings.size();
+        double expectedRunA = (double) a * (b + 1) / (a + b);
+
+        System.out.println("\n--- Bonus: Phan tich tat ca S(a,b) ---");
+        System.out.println("Tong so chuoi: " + allStrings.size());
+        System.out.printf("Trung binh RunA (chinh xac): %.4f\n", avgRunA);
+        System.out.printf("Gia tri ly thuyet: %.4f\n", expectedRunA);
+    }
+
+    //Các hàm phụ
+
+    public static List<Character> Toss(double p, int n) {
+        List<Character> result = new ArrayList<>();
+        Random rand = new Random();
+        for (int i = 0; i < n; i++) {
+            double r = rand.nextDouble();
+            if (r < p) {
+                result.add('H');
+            } else {
+                result.add('T');
+            }
+        }
+        return result;
+    }
+
+    public static int Runs(double p, int n) {
+        List<Character> tosses = Toss(p, n);
+        if (tosses.isEmpty()) return 0;
+
+        int runs = 1;
+        for (int i = 1; i < tosses.size(); i++) {
+            if (tosses.get(i) != tosses.get(i - 1)) {
+                runs++;
+            }
+        }
+        return runs;
+    }
+
+    public static int tossUntilHGreaterThanT(double p) {
+        Random rand = new Random();
+        int countH = 0;
+        int countT = 0;
+        int total = 0;
+
+        while (countH <= countT) {
+            total++;
+            double r = rand.nextDouble();
+            if (r < p) {
+                countH++;
+            } else {
+                countT++;
+            }
+        }
+
+        return total;
+    }
+
+    public static void generateAllABStrings(String prefix, int a, int b) {
+        if (a == 0 && b == 0) {
+            allStrings.add(prefix);
+            return;
+        }
+        if (a > 0) generateAllABStrings(prefix + "A", a - 1, b);
+        if (b > 0) generateAllABStrings(prefix + "B", a, b - 1);
+    }
+
+    public static int countRunA(String s) {
+        int runs = 0;
+        boolean inA = false;
+
+        for (char c : s.toCharArray()) {
+            if (c == 'A') {
+                if (!inA) {
+                    runs++;
+                    inA = true;
+                }
+            } else {
+                inA = false;
+            }
+        }
+        return runs;
+    }
+}
