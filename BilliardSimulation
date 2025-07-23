@@ -1,0 +1,96 @@
+package com.mycompany.billiardsimulation;
+
+import java.awt.geom.Point2D;
+
+public class BilliardSimulation {
+
+    public static void main(String[] args) {
+        System.out.println("== First Contact Test ==");
+        double a = 0.3, b = 0.6, angle = Math.PI / 3;
+        ContactResult result = firstContact(a, b, angle);
+        System.out.printf("Contact at (%.4f, %.4f), new angle: %.4f rad\n", result.x, result.y, result.newAngle);
+
+        System.out.println("\n== Expected R on OA ==");
+        int trials = 100000;
+        double totalR = 0;
+
+        for (int i = 0; i < trials; i++) {
+            double a0 = Math.random() * 0.5; // a in [0, 0.5]
+            double x = Math.random() * Math.PI; // angle in [0, π]
+
+            Point2D.Double R = simulateReturnToOA(a0, x);
+            totalR += R.x;
+        }
+
+        double ER = totalR / trials;
+        System.out.printf("E(R) ~ %.6f (with %d samples)\n", ER, trials);
+    }
+
+    //kết quả chạm
+    static class ContactResult {
+        double x, y, newAngle;
+        ContactResult(double x, double y, double angle) {
+            this.x = x;
+            this.y = y;
+            this.newAngle = angle;
+        }
+    }
+
+    // Tìm điểm va chạm đầu tiên và góc mới
+    static ContactResult firstContact(double a, double b, double angle) {
+        double dx = Math.cos(angle);
+        double dy = Math.sin(angle);
+
+        double tx = Double.POSITIVE_INFINITY;
+        double ty = Double.POSITIVE_INFINITY;
+
+        if (dx > 0) tx = (1 - a) / dx;
+        else if (dx < 0) tx = -a / dx;
+
+        if (dy > 0) ty = (1 - b) / dy;
+        else if (dy < 0) ty = -b / dy;
+
+        double t = Math.min(tx, ty);
+        double xHit = a + t * dx;
+        double yHit = b + t * dy;
+
+        // Gương phản xạ
+        double newAngle;
+        if (Math.abs(t - tx) < 1e-9) {
+            newAngle = Math.PI - angle;
+        } else {
+            newAngle = -angle;
+        }
+
+        //khoảng [0, 2π]
+        newAngle = (newAngle % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+        return new ContactResult(xHit, yHit, newAngle);
+    }
+
+    // đường đi cho đến khi quay về OA
+    static Point2D.Double simulateReturnToOA(double a, double angle) {
+        double x = a, y = 0;
+        double dx = Math.cos(angle), dy = Math.sin(angle);
+
+        while (true) {
+            double tx = Double.POSITIVE_INFINITY, ty = Double.POSITIVE_INFINITY;
+
+            if (dx > 0) tx = (1 - x) / dx;
+            else if (dx < 0) tx = -x / dx;
+
+            if (dy > 0) ty = (1 - y) / dy;
+            else if (dy < 0) ty = -y / dy;
+
+            double t = Math.min(tx, ty);
+            x += t * dx;
+            y += t * dy;
+
+            // Nếu quay về cạnh đáy
+            if (Math.abs(y) < 1e-8) return new Point2D.Double(x, 0);
+
+            // Phản xạ
+            if (Math.abs(t - tx) < 1e-8) dx = -dx;
+            else dy = -dy;
+        }
+    }
+}
