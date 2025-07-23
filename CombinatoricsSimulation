@@ -1,0 +1,108 @@
+package com.mycompany.combinatoricssimulation;
+
+import java.util.*;
+
+public class CombinatoricsSimulation {
+
+    public static void main(String[] args) {
+        int n = 6;
+        int samples = 10000;
+
+        System.out.println("== DERANGEMENT ==");
+        double exact = exactDerangementProb(n);
+        double approx = approximateDerangementProb(n, samples);
+        System.out.printf("Xac suat chinh xac: %.6f\n", exact);
+        System.out.printf("Xac suat mo phong (%d mau): %.6f\n", samples, approx);
+
+        System.out.println("\n== HILL-DISTANCE ==");
+        double sumHD = 0, sumSqHD = 0;
+        for (int i = 0; i < samples; i++) {
+            List<Integer> perm = randomPermutation(n);
+            int hd = hillDistance(perm);
+            sumHD += hd;
+            sumSqHD += hd * hd;
+        }
+        double meanHD = sumHD / samples;
+        double varHD = sumSqHD / samples - meanHD * meanHD;
+        System.out.printf("E(hill-distance): %.4f\n", meanHD);
+        System.out.printf("Var(hill-distance): %.4f\n", varHD);
+
+        System.out.println("\n== LONGEST INCREASING SUBSEQUENCE (LIS) ==");
+        double sumLIS = 0;
+        for (int i = 0; i < samples; i++) {
+            List<Integer> perm = randomPermutation(n);
+            int lis = LIS(perm);
+            sumLIS += lis;
+        }
+        double avgLIS = sumLIS / samples;
+        double approxLIS = 2 * Math.sqrt(n);
+        System.out.printf("E(length of LIS): %.4f\n", avgLIS);
+        System.out.printf("Gan dung 2*sqrt(n): %.4f\n", approxLIS);
+    }
+
+    // Phan 1 Derangement Exact
+    public static double exactDerangementProb(int n) {
+        return (double) countDerangements(n) / factorial(n);
+    }
+
+    public static int countDerangements(int n) {
+        if (n == 0) return 1;
+        if (n == 1) return 0;
+        return (n - 1) * (countDerangements(n - 1) + countDerangements(n - 2));
+    }
+
+    public static long factorial(int n) {
+        long res = 1;
+        for (int i = 2; i <= n; i++) res *= i;
+        return res;
+    }
+
+    // Phan 1 Derangement Approximate
+    public static double approximateDerangementProb(int n, int trials) {
+        int count = 0;
+        for (int i = 0; i < trials; i++) {
+            List<Integer> perm = randomPermutation(n);
+            boolean deranged = true;
+            for (int j = 0; j < n; j++) {
+                if (perm.get(j) == j + 1) {
+                    deranged = false;
+                    break;
+                }
+            }
+            if (deranged) count++;
+        }
+        return (double) count / trials;
+    }
+
+    public static List<Integer> randomPermutation(int n) {
+        List<Integer> list = new ArrayList<>();
+        for (int i = 1; i <= n; i++) list.add(i);
+        Collections.shuffle(list);
+        return list;
+    }
+
+    // Phan 2
+    public static int hillDistance(List<Integer> list) {
+        int total = 0;
+        for (int i = 0; i < list.size() - 1; i++) {
+            int a = list.get(i);
+            int b = list.get(i + 1);
+            if (a < b) total += 2 * (b - a);
+            else if (a > b) total += (a - b);
+            // else 0
+        }
+        return total;
+    }
+
+    // Phan 3
+    public static int LIS(List<Integer> seq) {
+        List<Integer> dp = new ArrayList<>();
+        for (int x : seq) {
+            int pos = Collections.binarySearch(dp, x);
+            if (pos < 0) pos = -pos - 1;
+            if (pos == dp.size()) dp.add(x);
+            else dp.set(pos, x);
+        }
+        return dp.size();
+    }
+}
